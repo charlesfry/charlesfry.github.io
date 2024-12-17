@@ -14,6 +14,10 @@ Fall 2020: I won the Pitt 2020 Hackathon's "Machine Learning / Big Data" Categor
 Here's my [medium post on predicting Starbucks consumer behavior](https://medium.com/@AmishWarlord/predicting-starbucks-customer-behavior-119fc3a43480){:target="_blank" rel="noopener"}
 [![Predicting Starbucks Consumer Behavior](/img/happycoffee.png)](https://medium.com/@AmishWarlord/predicting-starbucks-customer-behavior-119fc3a43480){:target="_blank" rel="noopener"}
 
+<h2> Random fun stuff </h2>
+
+[Here's my World of Darkness custom character generator](./vampire_creator.html){:target="_blank" rel="noopener"}
+
 # Contact info
 email: charlesmfry@gmail.com
 

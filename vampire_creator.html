@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vampire Character Generator</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e1e1e1;
+        }
+
+        .container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #c41e3a;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clans {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #c41e3a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background: #a01830;
+        }
+
+        .character-sheet {
+            font-family: monospace;
+            white-space: pre;
+            background: #333;
+            padding: 20px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vampire Character Generator</h1>
+        
+        <div class="controls">
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="vampireMode" checked>
+                    Vampire Mode
+                </label>
+            </div>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="sabbatWeights">
+                    Sabbat Class Weights
+                </label>
+            </div>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="npcCharacter">
+                    NPC Character
+                </label>
+            </div>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="selectAll" checked>
+                    Select All Clans
+                </label>
+            </div>
+        </div>
+
+        <div class="clans" id="clanSelection"></div>
+        
+        <button id="generateCharacter">Generate Character</button>
+        
+        <pre class="character-sheet" id="characterSheet"></pre>
+    </div>
+
+    <script>
+        const clans = [
+            'Banu Haqim', 'Brujah', 'Gangrel', 'Hecata', 'Lasombra', 
+            'Malkavian', 'Ministry', 'Nosferatu', 'Ravnos',
+            'Toreador', 'Tremere', 'Tzimisce', 'Ventrue'
+        ];
+
+        const defaultWeights = Array(clans.length).fill(1);
+        const sabbatWeights = [1, 2, 2.5, 0.5, 0.7, 1, 0.5, 1, 1, 2, 1, 3, 1];
+
+        const skills = [
+            ['Athletics', 'Animal Ken', 'Academics'],
+            ['Brawl', 'Etiquette', 'Awareness'],
+            ['Craft', 'Insight', 'Finance'],
+            ['Drive', 'Intimidation', 'Investigation'],
+            ['Firearms', 'Leadership', 'Medicine'],
+            ['Larceny', 'Performance', 'Occult'],
+            ['Melee', 'Persuasion', 'Politics'],
+            ['Stealth', 'Streetwise', 'Science'],
+            ['Survival', 'Subterfuge', 'Technology']
+        ];
+
+        const distributions = {
+            jack_of_all_trades: [3].concat(Array(8).fill(2)).concat(Array(10).fill(1)).concat(Array(8).fill(0)),
+            balanced: Array(3).fill(3).concat(Array(5).fill(2)).concat(Array(7).fill(1)).concat(Array(12).fill(0)),
+            specialist: [4].concat(Array(3).fill(3)).concat(Array(3).fill(2)).concat(Array(3).fill(1)).concat(Array(17).fill(0))
+        };
+
+        // Setup clan checkboxes
+        const clanSelection = document.getElementById('clanSelection');
+        clans.forEach(clan => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-label';
+            label.innerHTML = `
+                <input type="checkbox" class="clan-checkbox" value="${clan}" checked>
+                ${clan}
+            `;
+            clanSelection.appendChild(label);
+        });
+
+        // Handle "Select All" checkbox
+        document.getElementById('selectAll').addEventListener('change', (e) => {
+            document.querySelectorAll('.clan-checkbox').forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        // Helper functions
+        function getRandomItem(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function generateCharacter() {
+            const isVampire = document.getElementById('vampireMode').checked;
+            const isSabbat = document.getElementById('sabbatWeights').checked;
+            const isNPC = document.getElementById('npcCharacter').checked;
+            
+            const selectedClans = Array.from(document.querySelectorAll('.clan-checkbox:checked'))
+                .map(checkbox => checkbox.value);
+            
+            if (selectedClans.length === 0 && isVampire) {
+                alert('Please select at least one clan');
+                return;
+            }
+
+            const weights = isSabbat ? sabbatWeights : defaultWeights;
+            const clan = getRandomItem(selectedClans);
+            const sex = getRandomItem(['Male', 'Female']);
+            const generation = isVampire ? getRandomItem([11, 12, 13], [0.04, 0.20, 0.76]) : '';
+            const bloodPotence = isVampire ? 
+                (generation === 11 ? 2 : (isNPC ? getRandomItem([1, 2], [0.92, 0.08]) : 1)) : '';
+
+            // Generate attributes
+            const attributes = shuffleArray([4, 3, 3, 3, 2, 2, 2, 2, 1]);
+            const attributeNames = [
+                'Strength', 'Charisma', 'Intelligence',
+                'Dexterity', 'Manipulation', 'Wits',
+                'Stamina', 'Composure', 'Resolve'
+            ];
+
+            // Generate skills
+            const distribution = getRandomItem(Object.values(distributions));
+            const shuffledDistribution = shuffleArray([...distribution]);
+
+            // Format character sheet
+            const characterSheet = `
+${generateName(sex)}
+    ${clan}
+    Sex: ${sex}    Generation: ${generation}    Blood Potence: ${bloodPotence}
+
+${formatAttributes(attributeNames, attributes)}
+
+${formatSkills(skills, shuffledDistribution)}`;
+
+            document.getElementById('characterSheet').textContent = characterSheet;
+        }
+
+        function generateName(sex) {
+            // Simplified name generation - in practice, you'd want to use actual name lists
+            const firstNames = {
+                Male: ['James', 'John', 'Robert', 'Michael', 'William'],
+                Female: ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth']
+            };
+            const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'];
+            
+            return getRandomItem(firstNames[sex]) + ' ' + getRandomItem(lastNames);
+        }
+
+        function formatAttributes(names, values) {
+            let result = '';
+            for (let i = 0; i < 3; i++) {
+                result += names.slice(i * 3, i * 3 + 3).map((name, j) => 
+                    name.padEnd(12) + ': ' + values[i * 3 + j]
+                ).join('\t\t') + '\n';
+            }
+            return result + `\nHealth: ${values[6] + 3}\t\tWillpower: ${values[7] + values[8]}`;
+        }
+
+        function formatSkills(skillsList, distribution) {
+            let result = '';
+            for (let i = 0; i < skillsList.length; i++) {
+                const physical = skillsList[i][0].padEnd(12) + ': ' + distribution[i];
+                const social = skillsList[i][1].padEnd(12) + ': ' + distribution[i + 9];
+                const mental = skillsList[i][2].padEnd(12) + ': ' + distribution[i + 18];
+                result += `${physical}\t\t${social}\t\t${mental}\n`;
+            }
+            return result;
+        }
+
+        document.getElementById('generateCharacter').addEventListener('click', generateCharacter);
+    </script>
+</body>
+</html>
