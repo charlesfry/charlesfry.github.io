@@ -16,7 +16,11 @@ Here's my [medium post on predicting Starbucks consumer behavior](https://medium
 
 <h2> Random fun stuff </h2>
 
-[Here's my World of Darkness custom character generator](./vampire_creator.html){:target="_blank" rel="noopener"}
+[My RSS feed](./RSS.html)
+{:target="_blank" rel="noopener"}
+
+[Here's my World of Darkness custom character generator](./vampire_creator.html)
+{:target="_blank" rel="noopener"}
 
 # Contact info
 email: charlesmfry@gmail.com
