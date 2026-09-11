@@ -3,22 +3,26 @@
 
 @import "{{ site.theme }}";
 
+body {
+    background-color: #0d0d0d;
+}
+
 a {
-    color: #6495ED;
+    color: #39ff88;
 }
 
 a:hover {
-    color: #FFFACD;
+    color: #ff2ecc;
 }
 
 a:visited {
-    color: #FF00FF;
+    color: #00e0ff;
 }
 
-h1 {
-    color: #F5FFFA;
+h1, h2 {
+    color: #ff2ecc;
 }
 
 p {
-    color: #FFFFF0
+    color: #e8e8e8;
 }

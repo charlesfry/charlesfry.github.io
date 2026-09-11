@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fry RSS Aggregator</title>
+  <style>
+	body {
+	  font-family: Arial, sans-serif;
+	  font-size: 200%;
+	  margin: 0;
+	  padding: 1em;
+	  display: flex;
+	  gap: 2em;
+	  align-items: flex-start;
+	}
+
+	.content {
+	  flex: 1;
+	  min-width: 0;
+	}
+
+	.controls {
+	  background-color: #f0f0f0;
+	  padding: 1em;
+	  border-radius: 8px;
+	  position: sticky;
+	  top: 1em;
+	  height: fit-content;
+	  max-height: 90vh;
+	  overflow-y: auto;
+	  white-space: nowrap;
+	  flex: 0 0 auto;
+	}
+
+	h1 {
+	  font-size: 1.2em;
+	  margin-bottom: 0.5em;
+	}
+
+	ul {
+	  list-style-type: none;
+	  padding-left: 0;
+	}
+
+	li {
+	  margin-bottom: 1em;
+	}
+
+	.source {
+	  font-weight: bold;
+	}
+
+	.date {
+	  font-size: 0.6em;
+	  color: #555;
+	}
+
+	.controls h2 {
+	  font-size: 0.9em;
+	  margin-bottom: 0.5em;
+	}
+
+	.controls label {
+	  display: block;
+	  margin-bottom: 0.25em;
+	  font-size: 0.8em;
+	}
+
+	button {
+	  margin-top: 0.5em;
+	  padding: 0.4em 0.6em;
+	  font-size: 0.7em;
+	}
+
+	@media (max-width: 800px) {
+	  body {
+		flex-direction: column;
+	  }
+	}
+  </style>
+</head>
+<body>
+
+  <div class="content">
+    <h1>📰 Fry RSS Aggregator</h1>
+    <ul id="feed-list"></ul>
+  </div>
+
+  <div class="controls">
+    <h2>Select Feeds</h2>
+    <button id="select-all">Select All</button>
+    <button id="select-none">Select None</button>
+    <form id="feed-form"></form>
+	<button onclick="loadSelectedFeeds()">Apply Selection</button>
+  </div>
+
+<script>
+  const feeds = {
+    "AMS": "https://www.ams.org/news/rss.xml",
+    "Awesome Tuts": "https://awesometuts.com/blog/category/unreal-engine/feed/",
+    "Financial Express": "https://www.financialexpress.com/feed/",
+    "Game Developer": "https://www.gamedeveloper.com/rss.xml",
+    "Y Combinator": "https://news.ycombinator.com/rss",
+    "Investing.com": "https://www.investing.com/rss/news.rss",
+    "KDnuggets": "http://www.kdnuggets.com/feed",
+    "Machine Learning Mastery": "https://machinelearningmastery.com/blog/feed/",
+    "The New Stack": "https://thenewstack.io/feed/",
+    "The New York Times": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+    "Seeking Alpha": "https://seekingalpha.com/market_currents.xml",
+	"Tom Loomand": "https://www.tomlooman.com/feed/",
+    "Towards Data Science": "https://towardsdatascience.com/feed",
+    "Unreal Engine": "https://www.unrealengine.com/en-US/rss",
+	// "Wall Street Journal": "https://feeds.a.dj.com/rss/RSSWSJD.xml",
+  };
+
+  const proxy = "https://api.rss2json.com/v1/api.json?rss_url=";
+
+  const feedForm = document.getElementById("feed-form");
+  const feedList = document.getElementById("feed-list");
+
+  const BATCH_SIZE = 64;
+  let allItems = [];
+  let visibleIndex = 0;
+
+  // Load saved selections or default to all
+  const savedSelections = JSON.parse(localStorage.getItem("selectedFeeds")) || Object.keys(feeds);
+
+  // Render checkboxes with saved selections
+  for (const [name] of Object.entries(feeds)) {
+    const label = document.createElement("label");
+    const isChecked = savedSelections.includes(name);
+    label.innerHTML = `<input type="checkbox" name="feed" value="${name}" ${isChecked ? "checked" : ""}> ${name}`;
+    feedForm.appendChild(label);
+  }
+
+  const selectAllBtn = document.getElementById("select-all");
+  const selectNoneBtn = document.getElementById("select-none");
+
+  selectAllBtn.addEventListener("click", () => {
+    const checkboxes = feedForm.querySelectorAll('input[name="feed"]');
+    checkboxes.forEach(cb => cb.checked = true);
+    loadSelectedFeeds();
+  });
+
+  selectNoneBtn.addEventListener("click", () => {
+    const checkboxes = feedForm.querySelectorAll('input[name="feed"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    loadSelectedFeeds();
+  });
+
+  async function fetchFeed(name, url) {
+    try {
+      const res = await fetch(proxy + encodeURIComponent(url));
+      const data = await res.json();
+      return data.items.map(item => ({
+        title: item.title,
+        link: item.link,
+        pubDate: item.pubDate,
+        source: name
+      }));
+    } catch (err) {
+      console.error(`Error fetching ${name}:`, err);
+      return [];
+    }
+  }
+
+  async function loadSelectedFeeds() {
+    feedList.innerHTML = "";
+    allItems = [];
+    visibleIndex = 0;
+
+    const checkboxes = feedForm.querySelectorAll('input[name="feed"]:checked');
+    const selected = Array.from(checkboxes).map(cb => cb.value);
+
+    localStorage.setItem("selectedFeeds", JSON.stringify(selected));
+
+    const allResults = await Promise.all(
+      selected.map(name => fetchFeed(name, feeds[name]))
+    );
+
+    allItems = allResults.flat();
+    allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+    renderMoreItems();
+    checkAndRenderMore();  // Immediately check if need to load more after initial batch
+  }
+
+  function renderMoreItems() {
+    const nextItems = allItems.slice(visibleIndex, visibleIndex + BATCH_SIZE);
+    nextItems.forEach(item => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span class="source">${item.source}</span>:
+        <a href="${item.link}" target="_blank">${item.title}</a>
+        <div class="date">${new Date(item.pubDate).toLocaleString()}</div>
+      `;
+      feedList.appendChild(li);
+    });
+    visibleIndex += nextItems.length;
+  }
+
+  function isNearBottom() {
+    return (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 150);
+  }
+
+  function checkAndRenderMore() {
+    if (visibleIndex < allItems.length && isNearBottom()) {
+      renderMoreItems();
+      // After rendering more items, check again in next animation frame or shortly after to handle no-scroll cases
+      requestAnimationFrame(checkAndRenderMore);
+    }
+  }
+
+  // Scroll listener throttled with requestAnimationFrame
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        checkAndRenderMore();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+
+  // Initial load
+  loadSelectedFeeds();
+</script>
+
+</body>
+</html>
