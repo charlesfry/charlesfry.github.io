@@ -7,7 +7,6 @@ I’m a data scientist working in Ad-Tech. I have degrees in Mathematics and Eco
 # Older Public Projects
 I co-created a [videogame about being a vampire in Pittsburgh](https://itch.io/jam/vtm/rate/1298082){:target="_blank" rel="noopener"}
 [![Prince of Nothing](./img/pon.png)](https://itch.io/jam/vtm/rate/1298082){:target="_blank" rel="noopener"}
-
 February 2022: published a videogame on https://itch.io/jam/vtm/rate/1298082
 Fall 2020: I won the Pitt 2020 Hackathon's "Machine Learning / Big Data" Category with an epilepsy prediction algorithm!
 
@@ -18,11 +17,9 @@ Here's my [medium post on predicting Starbucks consumer behavior](https://medium
 
 <h2> Random fun stuff </h2>
 
-[My RSS feed](./RSS.html)
-{:target="_blank" rel="noopener"}
+[My RSS feed](./RSS.html){:target="_blank" rel="noopener"}
 
-[Here's my World of Darkness custom character generator](./vampire_creator.html)
-{:target="_blank" rel="noopener"}
+[Here's my World of Darkness custom character generator](./vampire_creator.html){:target="_blank" rel="noopener"}
 
 # Contact info
 email: charlesmfry@gmail.com
